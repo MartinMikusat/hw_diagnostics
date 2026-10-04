@@ -402,6 +402,9 @@ host_persist_state :: proc "c" (self: NS.id, cmd: NS.SEL, notification: ^NS.Noti
 	host_capture_window_frame()
 	_ = settings_save(settings_path(context.temp_allocator), host.settings)
 	update_finish()
+	// terminate: can exit without returning through main, so stop the journal here
+	// rather than relying on main's defer; otherwise every quit looks like a crash.
+	devlog.global_destroy()
 }
 
 // host_nsstring wraps a value as an autoreleased NSString.
