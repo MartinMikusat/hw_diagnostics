@@ -3,6 +3,7 @@ package hw_diagnostics
 import "base:intrinsics"
 import "base:runtime"
 import "core:fmt"
+import "core:strings"
 import NS "core:sys/darwin/Foundation"
 import MTL "vendor:darwin/Metal"
 import QC "vendor:darwin/QuartzCore"
@@ -113,6 +114,9 @@ host_register_classes :: proc() -> (delegate_class, view_class: NS.Class, ok: bo
 	if !host_add_method(delegate_class, "applicationShouldTerminateAfterLastWindowClosed:", rawptr(host_should_terminate), "B@:@") {return nil, nil, false}
 	if !host_add_method(delegate_class, "applicationWillTerminate:", rawptr(host_persist_state), "v@:@") {return nil, nil, false}
 	if !host_add_method(delegate_class, "diagnosticsUpdateReady:", rawptr(host_update_ready), "v@:@") {return nil, nil, false}
+	if !host_add_method(delegate_class, "applicationDidFinishLaunching:", rawptr(host_did_finish_launching), "v@:@") {return nil, nil, false}
+	if !host_add_method(delegate_class, "diagnosticsCheckForUpdates:", rawptr(host_check_updates), "v@:@") {return nil, nil, false}
+	if !host_add_method(delegate_class, "diagnosticsOpenSettings:", rawptr(host_open_settings_menu), "v@:@") {return nil, nil, false}
 	if !host_add_method(delegate_class, "windowDidResize:", rawptr(host_surface_changed), "v@:@") {return nil, nil, false}
 	if !host_add_method(delegate_class, "windowDidChangeBackingProperties:", rawptr(host_surface_changed), "v@:@") {return nil, nil, false}
 	if !host_add_method(delegate_class, "windowDidChangeScreen:", rawptr(host_surface_changed), "v@:@") {return nil, nil, false}
@@ -400,8 +404,77 @@ host_persist_state :: proc "c" (self: NS.id, cmd: NS.SEL, notification: ^NS.Noti
 	update_finish()
 }
 
+// host_nsstring wraps a value as an autoreleased NSString.
+host_nsstring :: proc(value: string) -> ^NS.String {
+	return intrinsics.objc_send(^NS.String, cast(^NS.Object)intrinsics.objc_find_class("NSString"), "stringWithUTF8String:", strings.clone_to_cstring(value, context.temp_allocator))
+}
+
+// host_build_menu gives the app the usual macOS menu: about, a manual update
+// check, settings and hide/quit. Without it the app menu is empty.
+host_build_menu :: proc() {
+	if host.app == nil {return}
+	ns_menu :: proc() -> ^NS.Object {return intrinsics.objc_send(^NS.Object, cast(^NS.Object)intrinsics.objc_find_class("NSMenu"), "new")}
+	ns_item :: proc() -> ^NS.Object {return intrinsics.objc_send(^NS.Object, cast(^NS.Object)intrinsics.objc_find_class("NSMenuItem"), "new")}
+	menubar := ns_menu()
+	app_item := ns_item()
+	app_menu := NS.Menu_initWithTitle(NS.Menu_alloc(), host_nsstring("hw_diagnostics"))
+	add :: proc(menu: ^NS.Menu, title: string, selector: cstring, key: string, target: ^NS.Object) {
+		item := intrinsics.objc_send(^NS.Object, menu, "addItemWithTitle:action:keyEquivalent:", host_nsstring(title), NS.sel_registerName(selector), host_nsstring(key))
+		if target != nil {intrinsics.objc_send(nil, item, "setTarget:", target)}
+	}
+	add(app_menu, "About hw_diagnostics", "orderFrontStandardAboutPanel:", "", nil)
+	add(app_menu, "Check for Updates…", "diagnosticsCheckForUpdates:", "", (^NS.Object)(host.delegate))
+	add(app_menu, "Settings…", "diagnosticsOpenSettings:", ",", (^NS.Object)(host.delegate))
+	intrinsics.objc_send(nil, app_menu, "addItem:", NS.MenuItem_separatorItem())
+	add(app_menu, "Hide hw_diagnostics", "hide:", "h", nil)
+	add(app_menu, "Quit hw_diagnostics", "terminate:", "q", nil)
+	intrinsics.objc_send(nil, app_item, "setSubmenu:", app_menu)
+	intrinsics.objc_send(nil, menubar, "addItem:", app_item)
+	intrinsics.objc_send(nil, host.app, "setMainMenu:", menubar)
+}
+
+host_did_finish_launching :: proc "c" (self: NS.id, cmd: NS.SEL, notification: ^NS.Notification) {
+	context = runtime.default_context()
+	// Set after launch: AppKit replaces the main menu while finishing the launch.
+	host_build_menu()
+}
+
+// host_manual_update_check is the Check for Updates… menu item.
+host_manual_update_check :: proc() {
+	if update_ready() {
+		host_message("an update is ready; quit to install", false)
+		return
+	}
+	if !update_request_check() {
+		host_message("update checks are unavailable in this build", true)
+		return
+	}
+	host_message("checking for updates…", false)
+	host_request_frames(2)
+}
+
+host_check_updates :: proc "c" (self: NS.id, cmd: NS.SEL, sender: NS.id) {
+	context = runtime.default_context()
+	host_manual_update_check()
+}
+
+host_open_settings_menu :: proc "c" (self: NS.id, cmd: NS.SEL, sender: NS.id) {
+	context = runtime.default_context()
+	host_open_settings()
+}
+
 host_update_ready :: proc "c" (self: NS.id, cmd: NS.SEL, object: NS.id) {
 	context = runtime.default_context()
+	if !update_ready() {
+		switch update_manual_result() {
+		case .Up_To_Date:
+			host_message("you're up to date", false)
+		case .Error:
+			host_message("couldn't check for updates", true)
+		case .None:
+		}
+		update_manual_clear()
+	}
 	host_request_frames(2)
 }
 
