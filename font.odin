@@ -2,7 +2,7 @@ package hw_diagnostics
 
 import coretext "ui_framework:coretext"
 
-FONT_NAME :: "IosevkaDiagnostics-Regular"
+FONT_NAME :: "IosevkaFileManager-Regular"
 // Iosevka Regular, embedded so the app needs no installed face. The full-coverage
 // subset is used because file names can be arbitrary Unicode; the OFL ships in
 // fonts/OFL.md.
