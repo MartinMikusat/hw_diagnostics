@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "repositories": [
+    {
+      "name": "hw_odin_devlog",
+      "path": "../odin_libraries/hw_odin_devlog",
+      "url": "https://github.com/MartinMikusat/hw_odin_devlog.git",
+      "revision": "58da74b1830712bfad7057d6c1401bbe423e3a63"
+    },
+    {
+      "name": "hw_odin_ui_framework",
+      "path": "../odin_libraries/hw_odin_ui_framework",
+      "url": "https://github.com/MartinMikusat/hw_odin_ui_framework.git",
+      "revision": "88818cbac68d61bcc2afeee42c59abf0104fa1c6"
+    },
+    {
+      "name": "hw_odin_native_update",
+      "path": "../odin_libraries/hw_odin_native_update",
+      "url": "https://github.com/MartinMikusat/hw_odin_native_update.git",
+      "revision": "009bc99def05b180d13b71a083a21d7557847765"
+    },
+    {
+      "name": "hw_odin_diagnostics",
+      "path": "../odin_libraries/hw_odin_diagnostics",
+      "url": "https://github.com/MartinMikusat/hw_odin_diagnostics.git",
+      "revision": "7e64f876237f965bfa86d5a2b2be30134bd0338f"
+    }
+  ]
+}

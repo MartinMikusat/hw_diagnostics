@@ -1,0 +1,6 @@
+build/
+*.dSYM
+.dev-logs/
+.DS_Store
+dist/
+dist.noindex/

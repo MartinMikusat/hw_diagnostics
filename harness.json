@@ -1,0 +1,23 @@
+{
+  "package": ".",
+  "collections": {
+    "devlog": "../odin_libraries/hw_odin_devlog",
+    "ui_framework": "../odin_libraries/hw_odin_ui_framework",
+    "native_update": "../odin_libraries/hw_odin_native_update",
+    "diagnostics": "../odin_libraries/hw_odin_diagnostics"
+  },
+  "copy": [
+    "build/ui.metallib"
+  ],
+  "foundation": [
+    "theme.odin",
+    "settings.odin"
+  ],
+  "tests": [
+    "."
+  ],
+  "test_flags": [
+    "-define:ODIN_TEST_THREADS=1",
+    "-define:ODIN_TEST_FAIL_ON_BAD_MEMORY=true"
+  ]
+}
