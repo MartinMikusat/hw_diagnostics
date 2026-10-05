@@ -15,4 +15,4 @@ and reveals it, so a user can hand the operator one file when something breaks.
 - Releases and updates: `python3 scripts/release_macos.py build <version>
   --notary-profile <profile>` then `publish dist.noindex/<version>`; the app
   checks the release feed hourly and swaps a staged update in on quit.
-  Publish only when the operator asks for a specific version.
+  Publish only when the operator asks.
